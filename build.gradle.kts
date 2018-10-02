@@ -11,6 +11,9 @@ repositories {
 }
 
 dependencies {
+    // HTTP server
+    compile("ru.odnoklassniki:one-nio:1.0.2")
+
     // Annotations for better code documentation
     compile("com.intellij:annotations:12.0")
 
