@@ -1,56 +1,51 @@
 package ru.mail.polis.mmishak
 
+import org.rocksdb.Options
+import org.rocksdb.RocksDB
+import org.rocksdb.RocksDBException
 import ru.mail.polis.KVDao
 import java.io.File
 import java.io.IOException
-import java.nio.file.Files
-import java.util.*
-import javax.xml.bind.DatatypeConverter
 
-class KVDaoImpl(private val storageDirectory: File) : KVDao {
+class KVDaoImpl(storageDirectory: File) : KVDao {
+
+    private var database: RocksDB = try {
+        RocksDB.open(
+            Options().setCreateIfMissing(true),
+            storageDirectory.path
+        )
+    } catch (e: RocksDBException) {
+        throw IllegalStateException(e)
+    }
 
     @Throws(NoSuchElementException::class, IOException::class)
-    override fun get(key: ByteArray): ByteArray {
-        val file = getFile(key)
-        return when {
-            file.exists() -> file.toByteArray()
-            else -> throw NoSuchElementException()
-        }
+    override fun get(key: ByteArray) = try {
+        database.get(key) ?: throw NoSuchElementException()
+    } catch (e: RocksDBException) {
+        throw IOException(e)
     }
 
     @Throws(IOException::class)
-    override fun upsert(key: ByteArray, value: ByteArray) {
-        val file = getFile(key)
-        when {
-            file.exists() -> file.write(value)
-            file.createNewFile() -> file.write(value)
-            else -> throw IOException()
-        }
+    override fun upsert(key: ByteArray, value: ByteArray) = try {
+        database.put(key, value)
+    } catch (e: RocksDBException) {
+        throw IOException(e)
     }
 
     @Throws(IOException::class)
-    override fun remove(key: ByteArray) {
-        val file = getFile(key)
-        val success = file.deleteIfExists()
-        if (!success) throw IOException()
+    override fun remove(key: ByteArray) = try {
+        database.delete(key)
+    } catch (e: RocksDBException) {
+        throw IOException(e)
     }
 
     override fun close() {
+        database.close()
     }
 
-    private fun getFile(key: ByteArray) =
-        File(storageDirectory.absolutePath + SEPARATOR + key.hexString)
-
-    private fun File.toByteArray() = Files.readAllBytes(this.toPath())
-
-    private fun File.write(value: ByteArray) = Files.write(this.toPath(), value)
-
-    private fun File.deleteIfExists() = if (exists()) delete() else true
-
-    private val ByteArray.hexString: String
-        get() = DatatypeConverter.printHexBinary(this)
-
     companion object {
-        private const val SEPARATOR = "/"
+        init {
+            RocksDB.loadLibrary()
+        }
     }
 }
