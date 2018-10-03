@@ -12,36 +12,43 @@ class KVDaoImpl(private val storageDirectory: File) : KVDao {
     @Throws(NoSuchElementException::class, IOException::class)
     override fun get(key: ByteArray): ByteArray {
         val file = getFile(key)
-        if (!file.exists()) throw NoSuchElementException("File with key'" + String(key) + "' not exits")
-        return Files.readAllBytes(file.toPath())
+        return when {
+            file.exists() -> file.toByteArray()
+            else -> throw NoSuchElementException()
+        }
     }
 
     @Throws(IOException::class)
     override fun upsert(key: ByteArray, value: ByteArray) {
         val file = getFile(key)
-        if (!file.exists()) {
-            if (!file.createNewFile()) throw IOException()
+        when {
+            file.exists() -> file.write(value)
+            file.createNewFile() -> file.write(value)
+            else -> throw IOException()
         }
-        Files.write(file.toPath(), value)
     }
 
     @Throws(IOException::class)
     override fun remove(key: ByteArray) {
         val file = getFile(key)
-        val success = !file.exists() || file.delete()
+        val success = file.deleteIfExists()
         if (!success) throw IOException()
     }
 
     override fun close() {
     }
 
-    private fun getFile(key: ByteArray): File {
-        return File(storageDirectory.absolutePath + SEPARATOR + keyToString(key))
-    }
+    private fun getFile(key: ByteArray) =
+        File(storageDirectory.absolutePath + SEPARATOR + key.hexString)
 
-    private fun keyToString(key: ByteArray): String {
-        return DatatypeConverter.printHexBinary(key)
-    }
+    private fun File.toByteArray() = Files.readAllBytes(this.toPath())
+
+    private fun File.write(value: ByteArray) = Files.write(this.toPath(), value)
+
+    private fun File.deleteIfExists() = if (exists()) delete() else true
+
+    private val ByteArray.hexString: String
+        get() = DatatypeConverter.printHexBinary(this)
 
     companion object {
         private const val SEPARATOR = "/"
