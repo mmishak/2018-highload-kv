@@ -1,14 +1,13 @@
 package ru.mail.polis.mmishak
 
 import ru.mail.polis.KVDao
-
-import javax.xml.bind.DatatypeConverter
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
-import java.util.NoSuchElementException
+import java.util.*
+import javax.xml.bind.DatatypeConverter
 
-class KVDaoImpl(private var storageDirectory: File) : KVDao {
+class KVDaoImpl(private val storageDirectory: File) : KVDao {
 
     @Throws(NoSuchElementException::class, IOException::class)
     override fun get(key: ByteArray): ByteArray {
