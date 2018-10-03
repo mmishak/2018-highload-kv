@@ -21,8 +21,11 @@ dependencies {
     // HTTP server
     compile("ru.odnoklassniki:one-nio:1.0.2")
 
-    //Key-value database - RockDB
+    // Key-value database - RockDB
     compile("org.rocksdb:rocksdbjni:5.14.2")
+
+    // Logger
+    compile("ch.qos.logback:logback-classic:1.2.3")
 
     // Annotations for better code documentation
     compile("com.intellij:annotations:12.0")
