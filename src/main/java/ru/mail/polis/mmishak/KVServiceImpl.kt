@@ -10,48 +10,49 @@ import java.util.*
 class KVServiceImpl(port: Int, private val dao: KVDao) : HttpServer(buildConfig(port)), KVService {
 
     @Path("/v0/status")
-    fun handleRequestStatus() = Response.ok("OK")
+    fun status() = Response.ok(MESSAGE_OK)
 
     @Path("/v0/entity")
     @Throws(IOException::class)
-    fun handleRequestEntity(request: Request, session: HttpSession) {
-        val entityId = request.getParameter(PARAM_ID_PREFIX)
-        if (entityId == null || entityId.isBlank()) {
+    fun entity(request: Request, session: HttpSession) {
+        val id = request.getParameter(PARAM_ID_PREFIX)
+        if (id == null || id.isBlank()) {
             session.sendResponse(Response(Response.BAD_REQUEST, Response.EMPTY))
             return
         }
         when (request.method) {
-            Request.METHOD_GET -> handleRequestGetEntity(session, entityId)
-            Request.METHOD_PUT -> handleRequestPutEntity(request, session, entityId)
-            Request.METHOD_DELETE -> handleRequestDeleteEntity(session, entityId)
+            Request.METHOD_GET -> session.getEntity(id)
+            Request.METHOD_PUT -> session.putEntity(id, value = request.body)
+            Request.METHOD_DELETE -> session.deleteEntity(id)
             else -> session.sendResponse(Response(Response.BAD_REQUEST, Response.EMPTY))
         }
     }
 
     @Throws(IOException::class)
-    private fun handleRequestGetEntity(session: HttpSession, entityId: String) {
+    private fun HttpSession.getEntity(id: String) {
         try {
-            val data = dao.get(entityId.toByteArray())
-            session.sendResponse(Response.ok(data))
+            val data = dao.get(id.toByteArray())
+            sendResponse(Response.ok(data))
         } catch (e: NoSuchElementException) {
-            session.sendResponse(Response(Response.NOT_FOUND, Response.EMPTY))
+            sendResponse(Response(Response.NOT_FOUND, Response.EMPTY))
         }
     }
 
     @Throws(IOException::class)
-    private fun handleRequestPutEntity(request: Request, session: HttpSession, entityId: String) {
-        dao.upsert(entityId.toByteArray(), request.body)
-        session.sendResponse(Response(Response.CREATED, Response.EMPTY))
+    private fun HttpSession.putEntity(id: String, value: ByteArray) {
+        dao.upsert(id.toByteArray(), value)
+        sendResponse(Response(Response.CREATED, Response.EMPTY))
     }
 
     @Throws(IOException::class)
-    private fun handleRequestDeleteEntity(session: HttpSession, entityId: String) {
-        dao.remove(entityId.toByteArray())
-        session.sendResponse(Response(Response.ACCEPTED, Response.EMPTY))
+    private fun HttpSession.deleteEntity(id: String) {
+        dao.remove(id.toByteArray())
+        sendResponse(Response(Response.ACCEPTED, Response.EMPTY))
     }
 
     companion object {
 
+        private const val MESSAGE_OK = "OK"
         private const val PARAM_ID_PREFIX = "id="
 
         private fun buildConfig(port: Int) = HttpServerConfig().apply {
