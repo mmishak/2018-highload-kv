@@ -4,9 +4,8 @@ import one.nio.http.*
 import one.nio.server.AcceptorConfig
 import ru.mail.polis.KVDao
 import ru.mail.polis.KVService
-
 import java.io.IOException
-import java.util.NoSuchElementException
+import java.util.*
 
 class KVServiceImpl(port: Int, private val dao: KVDao) : HttpServer(buildConfig(port)), KVService {
 
@@ -17,7 +16,7 @@ class KVServiceImpl(port: Int, private val dao: KVDao) : HttpServer(buildConfig(
     @Throws(IOException::class)
     fun handleRequestEntity(request: Request, session: HttpSession) {
         val entityId = request.getParameter(PARAM_ID_PREFIX)
-        if (entityId == null || entityId.isEmpty()) {
+        if (entityId == null || entityId.isBlank()) {
             session.sendResponse(Response(Response.BAD_REQUEST, Response.EMPTY))
             return
         }
