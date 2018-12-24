@@ -113,7 +113,7 @@ class KVServiceImpl(port: Int, private val dao: KVDao, topology: Set<String>) : 
             Request.METHOD_PATCH -> "PATH"
             Request.METHOD_POST -> "POST"
             Request.METHOD_TRACE -> "TRACE"
-            else -> "OTHER"
+            else -> "UNDEFINED"
         }
 
     companion object {
