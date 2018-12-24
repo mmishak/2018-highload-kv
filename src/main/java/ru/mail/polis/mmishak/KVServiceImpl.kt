@@ -11,8 +11,12 @@ import java.util.*
 class KVServiceImpl(port: Int, private val dao: KVDao) : HttpServer(buildConfig(port)), KVService {
 
     override fun handleRequest(request: Request?, session: HttpSession?) {
-        request?.also { logger.info(it.logString) }
+        request?.let { logger.info(it.logString) }
         super.handleRequest(request, session)
+    }
+
+    override fun handleDefault(request: Request?, session: HttpSession?) {
+        session?.sendResponse(Response(Response.BAD_REQUEST, Response.EMPTY))
     }
 
     @Path("/v0/status")
