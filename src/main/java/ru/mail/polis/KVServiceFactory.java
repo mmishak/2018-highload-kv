@@ -19,7 +19,6 @@ package ru.mail.polis;
 import org.jetbrains.annotations.NotNull;
 import ru.mail.polis.mmishak.KVServiceImpl;
 
-import java.io.IOException;
 import java.util.Set;
 
 /**
@@ -46,7 +45,7 @@ final class KVServiceFactory {
     static KVService create(
             final int port,
             @NotNull final KVDao dao,
-            @NotNull final Set<String> topology) throws IOException {
+            @NotNull final Set<String> topology) {
         if (Runtime.getRuntime().maxMemory() > MAX_HEAP) {
             throw new IllegalStateException("The heap is too big. Consider setting Xmx.");
         }
@@ -55,6 +54,6 @@ final class KVServiceFactory {
             throw new IllegalArgumentException("Port out of range");
         }
 
-        return new KVServiceImpl(port, dao);
+        return new KVServiceImpl(port, dao, topology);
     }
 }

@@ -1,14 +1,36 @@
 package ru.mail.polis.mmishak
 
 import one.nio.http.*
+import one.nio.net.ConnectionString
 import one.nio.server.AcceptorConfig
 import org.slf4j.LoggerFactory
 import ru.mail.polis.KVDao
 import ru.mail.polis.KVService
+import ru.mail.polis.mmishak.internal.RequestProcessorFactory
 import java.io.IOException
 import java.util.*
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
-class KVServiceImpl(port: Int, private val dao: KVDao) : HttpServer(buildConfig(port)), KVService {
+
+class KVServiceImpl(port: Int, private val dao: KVDao, topology: Set<String>) : HttpServer(buildConfig(port)),
+    KVService {
+
+    private val quorum = ReplicasParam.byNodeCount(topology.size)
+    private val clients = HashMap<String, HttpClient>(topology.size - 1)
+    private val hosts = ArrayList<String>(topology.size - 1)
+    private val executor = Executors.newWorkStealingPool()
+    private val putAndDeleteProcessor = RequestProcessorFactory.newRequestProcessor<Boolean>(executor)
+    private val getProcessor = RequestProcessorFactory.newRequestProcessor<Data>(executor)
+
+    init {
+        topology.forEach { host ->
+            hosts.add(host)
+            clients[host] = HttpClient(ConnectionString(host))
+        }
+    }
 
     override fun handleRequest(request: Request?, session: HttpSession?) {
         request?.let { logger.info(it.logString) }
@@ -19,15 +41,24 @@ class KVServiceImpl(port: Int, private val dao: KVDao) : HttpServer(buildConfig(
         session?.sendResponse(Response(Response.BAD_REQUEST, Response.EMPTY))
     }
 
-    @Path("/v0/status")
+    @Path(STATUS_PATH)
     fun status() = Response.ok(MESSAGE_OK)
 
-    @Path("/v0/entity")
+    @Path(ENTITY_PATH)
     @Throws(IOException::class)
-    fun entity(@Param("id") id: String?, request: Request): Response {
+    fun entity(@Param("id") id: String?, @Param("replicas") requestReplicas: String?, request: Request): Response {
         if (id == null || id.isBlank()) {
             return Response(Response.BAD_REQUEST, Response.EMPTY)
         }
+
+        val replicas = try {
+            requestReplicas?.let { ReplicasParam.byRequestParam(it) } ?: quorum
+        } catch (e: IllegalArgumentException) {
+            return Response(Response.BAD_REQUEST, Response.EMPTY)
+        }
+
+        val internal = request.getHeader(INTERNAL_HEADER) != null
+
         return when (request.method) {
             Request.METHOD_GET -> getEntity(id)
             Request.METHOD_PUT -> putEntity(id, value = request.body)
@@ -57,6 +88,17 @@ class KVServiceImpl(port: Int, private val dao: KVDao) : HttpServer(buildConfig(
         return Response(Response.ACCEPTED, Response.EMPTY)
     }
 
+    override fun stop() {
+        super.stop()
+        executor.shutdown()
+        try {
+            executor.awaitTermination(5, TimeUnit.SECONDS)
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        executor.shutdownNow()
+    }
+
     private val Request.logString: String
         get() = "Request: [$methodName] $host$path${queryString?.let { "?$it" } ?: ""}"
 
@@ -75,6 +117,11 @@ class KVServiceImpl(port: Int, private val dao: KVDao) : HttpServer(buildConfig(
         }
 
     companion object {
+
+        const val INTERNAL_HEADER = "X-Internal-header: true"
+
+        const val STATUS_PATH = "/v0/status"
+        const val ENTITY_PATH = "/v0/entity"
 
         private const val MESSAGE_OK = "OK"
 
