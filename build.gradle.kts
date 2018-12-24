@@ -18,14 +18,14 @@ dependencies {
     // Kotlin support
     compile(kotlin("stdlib-jdk8"))
 
-    // HTTP server
-    compile("ru.odnoklassniki:one-nio:1.0.2")
-
     // Key-value database - RockDB
     compile("org.rocksdb:rocksdbjni:5.14.2")
 
     // Logger
     compile("ch.qos.logback:logback-classic:1.2.3")
+
+    // Our beloved one-nio
+    compile("ru.odnoklassniki:one-nio:1.0.2")
 
     // Annotations for better code documentation
     compile("com.intellij:annotations:12.0")
@@ -33,9 +33,6 @@ dependencies {
     // JUnit 5
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.3.1")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.3.1")
-
-    // HTTP client for unit tests
-    testCompile("org.apache.httpcomponents:fluent-hc:4.5.3")
 
     // Guava for tests
     testCompile("com.google.guava:guava:23.1-jre")
@@ -50,7 +47,7 @@ tasks {
 
 application {
     // Define the main class for the application
-    mainClassName = "ru.mail.polis.Server"
+    mainClassName = "ru.mail.polis.Cluster"
 
     // And limit Xmx
     applicationDefaultJvmArgs = listOf("-Xmx128m")
