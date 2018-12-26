@@ -10,7 +10,7 @@ class PutRequest(id: String, client: HttpClient, val value: ByteArray) : Interna
     override fun call(): Boolean = try {
         client.put("$ENTITY_PATH?id=$id", value, INTERNAL_HEADER).status == 201
     } catch (e: Exception) {
-        logger.error("Put internal request failed, id = $id", e)
+        logger.error("Put internal request failed, id = $id")
         false
     }
 

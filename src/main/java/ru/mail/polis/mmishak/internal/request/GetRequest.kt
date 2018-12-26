@@ -14,7 +14,7 @@ class GetRequest(id: String, client: HttpClient) : InternalRequest<Data>(id, cli
         val body = client.get("$ENTITY_PATH?id=$id", INTERNAL_HEADER).body
         Serializer.deserialize(body) as Data
     } catch (e: Exception) {
-        logger.error("Get internal request failed, id = $id", e)
+        logger.error("Get internal request failed, id = $id")
         ErrorData
     }
 

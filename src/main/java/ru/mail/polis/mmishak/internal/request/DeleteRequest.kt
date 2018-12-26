@@ -10,7 +10,7 @@ class DeleteRequest(id: String, client: HttpClient) : InternalRequest<Boolean>(i
     override fun call(): Boolean = try {
         client.delete("$ENTITY_PATH?id=$id", INTERNAL_HEADER).status == 202
     } catch (e: Exception) {
-        logger.error("Delete internal request failed, id = $id", e)
+        logger.error("Delete internal request failed, id = $id")
         false
     }
 
