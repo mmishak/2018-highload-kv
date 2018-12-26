@@ -17,6 +17,7 @@
 package ru.mail.polis;
 
 import org.jetbrains.annotations.NotNull;
+import ru.mail.polis.mmishak.KVDaoImpl;
 import ru.mail.polis.mmishak.KVServiceImpl;
 
 import java.util.Set;
@@ -54,6 +55,6 @@ final class KVServiceFactory {
             throw new IllegalArgumentException("Port out of range");
         }
 
-        return new KVServiceImpl(port, dao, topology);
+        return new KVServiceImpl(port, (KVDaoImpl) dao, topology);
     }
 }
