@@ -189,12 +189,7 @@ class KVServiceImpl(port: Int, private val dao: KVDaoImpl, topology: Set<String>
         if (replicas.from > 1) {
             results += putAndDeleteProcessor.process(
                 addresses.take(replicas.from - 1).mapNotNull {
-                    clients[it]?.let { client ->
-                        DeleteRequest(
-                            id,
-                            client
-                        )
-                    }
+                    clients[it]?.let { client -> DeleteRequest(id, client) }
                 }
             )
         }
