@@ -119,7 +119,9 @@ class KVServiceImpl(port: Int, private val dao: KVDaoImpl, topology: Set<String>
         val results = mutableListOf(dao.getInternal(id.toByteArray()))
         if (replicas.from > 1) {
             results += getProcessor.process(
-                addresses.take(replicas.from - 1).mapNotNull { clients[it]?.let { client -> GetRequest(id, client) } }
+                addresses.take(replicas.from - 1).mapNotNull {
+                    clients[it]?.let { client -> GetRequest(id, client) }
+                }
             )
         }
         val data = results
@@ -158,13 +160,7 @@ class KVServiceImpl(port: Int, private val dao: KVDaoImpl, topology: Set<String>
         if (replicas.from > 1) {
             results += putAndDeleteProcessor.process(
                 addresses.take(replicas.from - 1).mapNotNull {
-                    clients[it]?.let { client ->
-                        PutRequest(
-                            id,
-                            client,
-                            value
-                        )
-                    }
+                    clients[it]?.let { client -> PutRequest(id, client, value) }
                 }
             )
         }
