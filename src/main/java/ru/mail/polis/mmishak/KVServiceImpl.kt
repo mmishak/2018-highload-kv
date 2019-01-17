@@ -27,7 +27,7 @@ class KVServiceImpl(port: Int, private val dao: KVDaoImpl, topology: Set<String>
 
     init {
         topology.forEach { address ->
-            if (address.endsWith(port.toString())) return@forEach
+            if (address.endsWith(":$port")) return@forEach
             addresses.add(address)
             clients[address] = HttpClient(ConnectionString(address))
         }
