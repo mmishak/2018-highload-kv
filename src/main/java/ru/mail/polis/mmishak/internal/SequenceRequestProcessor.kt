@@ -9,7 +9,7 @@ class SequenceRequestProcessor<T>(private val executorService: ExecutorService) 
 
     override fun process(requests: List<InternalRequest<T>>): List<T> {
         try {
-            return executorService.invokeAll(requests).map {it.get() }
+            return executorService.invokeAll(requests).map { it.get() }
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
         } catch (e: ExecutionException) {
